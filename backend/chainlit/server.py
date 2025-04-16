@@ -1327,7 +1327,19 @@ def validate_file_mime_type(file: UploadFile):
     Raises:
         ValueError: If the file type is not allowed.
     """
-
+    allowed_extensions = [
+        "msg",
+        "pdf",
+        "json",
+        "docx",
+        "xlsx",
+        "txt",
+        "eml",
+        "mp3",
+        "mp4",
+        "wav",
+    ]
+    print("HHHSHSHSSS", file.content_type)
     if (
         config.features.spontaneous_file_upload is None
         or config.features.spontaneous_file_upload.accept is None
@@ -1337,13 +1349,18 @@ def validate_file_mime_type(file: UploadFile):
 
     accept = config.features.spontaneous_file_upload.accept
 
-    assert isinstance(accept, List) or isinstance(accept, dict), (
-        "Invalid configuration for spontaneous_file_upload, accept must be a list or a dict"
-    )
-
+    assert isinstance(accept, List) or isinstance(
+        accept, dict
+    ), "Invalid configuration for spontaneous_file_upload, accept must be a list or a dict"
+    print(accept)
+    print(file.filename)
     if isinstance(accept, List):
         for pattern in accept:
-            if fnmatch.fnmatch(file.content_type, pattern):
+            if file.content_type == "application/octet-stream":
+                if file.filename.split(".")[-1] in allowed_extensions:
+                    if fnmatch.fnmatch(file.content_type, pattern):
+                        return
+            elif fnmatch.fnmatch(file.content_type, pattern):
                 return
     elif isinstance(accept, dict):
         for pattern, extensions in accept.items():
@@ -1351,12 +1368,9 @@ def validate_file_mime_type(file: UploadFile):
                 if len(extensions) == 0:
                     return
                 for extension in extensions:
-                    if file.filename is not None and file.filename.lower().endswith(
-                        extension.lower()
-                    ):
+                    if file.filename is not None and file.filename.endswith(extension):
                         return
     raise ValueError("File type not allowed")
-
 
 def validate_file_size(file: UploadFile):
     """Validate the file size as configured in config.features.spontaneous_file_upload.
